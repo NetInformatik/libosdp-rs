@@ -1,9 +1,7 @@
 use anyhow::Context;
 use build_target::Os;
 use std::{
-    borrow::BorrowMut,
-    path::{Path, PathBuf},
-    process::Command,
+    borrow::BorrowMut, env, path::{Path, PathBuf}, process::Command
 };
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
@@ -104,6 +102,9 @@ fn generate_osdp_build_headers(out_dir: &str) -> Result<()> {
 fn main() -> Result<()> {
     let out_dir = std::env::var("OUT_DIR").unwrap();
 
+    // HANDLE SPECIAL TARGETS
+    let target = env::var("TARGET").unwrap();
+
     generate_osdp_build_headers(&out_dir)?;
 
     /* build LibOSDP */
@@ -115,6 +116,21 @@ fn main() -> Result<()> {
         .include("vendor/utils/include")
         .warnings(true)
         .include(&out_dir);
+
+    // ESP32 Xtensa Builds
+    if target.contains("xtensa") {
+        // Set path to your xtensa-esp32-elf-gcc
+        // You may also want to support the CROSS_COMPILE env variable
+        let xtensa_cc = env::var("CROSS_COMPILE")
+            .map(|path| format!("{}gcc", path))
+            .unwrap_or_else(|_| "/home/vince/projects/guardian/.embuild/espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc".to_owned());
+
+        // Override the CC environment variable
+        env::set_var("CC", xtensa_cc);
+
+        // Define bare metal
+        build = build.define("__BARE_METAL__", "1");
+    }
 
     if std::env::var("WIN_WERROR").is_err() && Os::target().unwrap() != Os::Windows {
         // TODO: Windows builds warn about various things which are legitimate
