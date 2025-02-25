@@ -130,6 +130,9 @@ fn main() -> Result<()> {
 
         // Define bare metal
         build = build.define("__BARE_METAL__", "1");
+
+        // Set -mlongcalls for ESP32 builds
+        build = build.flag("-mlongcalls");
     }
 
     if std::env::var("WIN_WERROR").is_err() && Os::target().unwrap() != Os::Windows {
