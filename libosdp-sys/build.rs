@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use build_target::Os;
 use std::{
     borrow::BorrowMut, env, path::{Path, PathBuf}, process::Command
@@ -119,20 +119,32 @@ fn main() -> Result<()> {
 
     // ESP32 Xtensa Builds
     if target.contains("xtensa") {
-        // Set path to your xtensa-esp32-elf-gcc
-        // You may also want to support the CROSS_COMPILE env variable
-        let xtensa_cc = env::var("CROSS_COMPILE")
-            .map(|path| format!("{}gcc", path))
-            .unwrap_or_else(|_| "/home/vince/projects/guardian/.embuild/espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc".to_owned());
+        // Get the first two parts of the target triple
+        let parts: Vec<&str> = target.split('-').collect();
+        if parts.len() < 2 {
+            return Err(anyhow!("Invalid target triple: {}", target));
+        }
+        let xtensa_target = format!("{}-{}", parts[0], parts[1]);
 
-        // Override the CC environment variable
-        env::set_var("CC", xtensa_cc);
+        // Assemble the compiler command
+        let xtensa_cc = format!("{}-elf-gcc", xtensa_target);
 
-        // Define bare metal
-        build = build.define("__BARE_METAL__", "1");
+        // Dynamically locate xtensa-esp32-elf-gcc: first try CROSS_COMPILE env, then search PATH
+        let xtensa_cc_path = env::var("CROSS_COMPILE")
+            .map(|p| format!("{}gcc", p))
+            .or_else(|_| {
+                exec_cmd(vec!["which", xtensa_cc.as_str()])
+                    .map_err(|_| anyhow!("{} not found in PATH", xtensa_cc))
+            })?;
+         
+         // Override the CC environment variable
+         env::set_var("CC", xtensa_cc_path);
 
-        // Set -mlongcalls for ESP32 builds
-        build = build.flag("-mlongcalls");
+         // Define bare metal
+         build = build.define("__BARE_METAL__", "1");
+
+         // Set -mlongcalls for ESP32 builds
+         build = build.flag("-mlongcalls");
     }
 
     if std::env::var("WIN_WERROR").is_err() && Os::target().unwrap() != Os::Windows {
