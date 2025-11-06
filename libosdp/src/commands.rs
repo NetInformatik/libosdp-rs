@@ -156,7 +156,7 @@ impl From<libosdp_sys::osdp_cmd_led> for OsdpCommandLed {
     fn from(value: libosdp_sys::osdp_cmd_led) -> Self {
         OsdpCommandLed {
             reader: value.reader,
-            led_number: value.reader,
+            led_number: value.led_number,
             temporary: value.temporary.into(),
             permanent: value.permanent.into(),
         }
