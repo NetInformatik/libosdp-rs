@@ -130,6 +130,7 @@ fn main() -> Result<()> {
     }
 
     let source_files = vec![
+        "vendor/utils/src/crc16.c",
         "vendor/utils/src/list.c",
         "vendor/utils/src/queue.c",
         "vendor/utils/src/slab.c",
