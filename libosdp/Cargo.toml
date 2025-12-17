@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "libosdp"
-version = "0.1.10"
+version = "0.1.9"
 authors = ["Siddharth Chandrasekaran <sidcha.dev@gmail.com>"]
 description = "Library implementation of IEC 60839-11-5 OSDP (Open Supervised Device Protocol)"
 documentation = "https://docs.rs/libosdp"
@@ -15,7 +15,7 @@ categories = ["development-tools", "embedded"]
 [dependencies]
 bitflags = "2.4.0"
 embedded-io = { version = "0.6.1", features = ["alloc"] }
-libosdp-sys = { version = "3.1.0", path = "../libosdp-sys" }
+libosdp-sys = "3.1.0"
 log = { version = "0.4.20", optional = true }
 serde = { version = "1.0.192", features = ["derive", "alloc"], default-features = false }
 serde_arrays = "0.2.0"
