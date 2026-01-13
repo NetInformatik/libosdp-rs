@@ -146,6 +146,9 @@ pub enum PdCapability {
     ///   1 - IEC 60839-11-5
     ///   2 - SIA OSDP 2.2
     OsdpVersion(PdCapEntity),
+
+    /// Unknown/Unsupported capability
+    Unknown(u8, PdCapEntity),
 }
 
 #[rustfmt::skip]
@@ -267,7 +270,7 @@ impl From<libosdp_sys::osdp_pd_cap> for PdCapability {
             libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OSDP_VERSION => {
                 PdCapability::OsdpVersion(e)
             }
-            _ => panic!("Unknown function code"),
+            fc => PdCapability::Unknown(fc, e)
         }
     }
 }
@@ -324,6 +327,7 @@ impl From<PdCapability> for u8 {
             PdCapability::OsdpVersion(_) => {
                 libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OSDP_VERSION as u8
             }
+            PdCapability::Unknown(fc, _) => fc
         }
     }
 }
@@ -408,6 +412,11 @@ impl From<PdCapability> for libosdp_sys::osdp_pd_cap {
                 num_items: e.num_items,
             },
             PdCapability::OsdpVersion(e) => libosdp_sys::osdp_pd_cap {
+                function_code,
+                compliance_level: e.compliance,
+                num_items: e.num_items,
+            },
+            PdCapability::Unknown(_, e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,

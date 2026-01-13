@@ -54,14 +54,17 @@ extern "C" fn trampoline<F>(data_ptr: *mut c_void, cmd_ptr: *mut libosdp_sys::os
 where
     F: FnMut(&mut OsdpCommand) -> i32,
 {
-    let mut cmd: OsdpCommand = unsafe { cmd_ptr.read().into() };
-    let callback: &mut F = unsafe { &mut *(data_ptr as *mut F) };
-    let res = callback(&mut cmd);
-    // TODO: Free data_ptr's box?
-    unsafe {
-        cmd_ptr.write(cmd.into());
+    match unsafe { cmd_ptr.read().try_into() } {
+        Ok(mut cmd) => {
+            let callback: &mut F = unsafe { &mut *(data_ptr as *mut F) };
+            let res = callback(&mut cmd);
+            unsafe {
+                cmd_ptr.write(cmd.into());
+            }
+            res
+        },
+        Err(_) => -1,  // Failed to parse the command data -> Send NAK
     }
-    res
 }
 
 fn get_trampoline<F>(_closure: &F) -> CommandCallback
