@@ -145,7 +145,7 @@ pub enum OsdpError {
     Unknown,
 }
 
-#[cfg(feature = "defmt-03")]
+#[cfg(feature = "defmt")]
 impl defmt::Format for OsdpError {
     fn format(&self, f: defmt::Formatter<'_>) {
         match self {

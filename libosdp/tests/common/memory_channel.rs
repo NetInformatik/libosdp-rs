@@ -3,19 +3,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{
-    io::{Read, Write},
-    sync::Arc,
-};
+use std::io::{Read, Write};
 
 use libosdp::ChannelError;
-use ringbuf::HeapRb;
+use ringbuf::{HeapRb, HeapProd, HeapCons, traits::Split};
 
 /// An in-memory OSDP channel suitable for testing
 pub struct MemoryChannel {
     id: i32,
-    sender: ringbuf::Producer<u8, Arc<HeapRb<u8>>>,
-    receiver: ringbuf::Consumer<u8, Arc<HeapRb<u8>>>,
+    sender: HeapProd<u8>,
+    receiver: HeapCons<u8>,
 }
 
 impl std::fmt::Debug for MemoryChannel {

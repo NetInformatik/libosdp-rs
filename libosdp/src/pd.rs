@@ -17,9 +17,9 @@ use crate::{
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::ffi::c_void;
-#[cfg(feature = "defmt-03")]
+#[cfg(feature = "defmt")]
 use defmt::{debug, error, info, warn};
-#[cfg(all(feature = "log", not(feature = "defmt-03")))]
+#[cfg(all(feature = "log", not(feature = "defmt")))]
 use log::{debug, error, info, warn};
 
 type Result<T> = core::result::Result<T, OsdpError>;
@@ -32,7 +32,7 @@ unsafe extern "C" fn log_handler(
     _line: ::core::ffi::c_ulong,
     _msg: *const ::core::ffi::c_char,
 ) {
-    #[cfg(any(feature = "log", feature = "defmt-03"))]
+    #[cfg(any(feature = "log", feature = "defmt"))]
     {
         let msg = crate::cstr_to_string(_msg);
         let msg = msg.trim();

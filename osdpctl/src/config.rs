@@ -47,7 +47,7 @@ impl KeyStore {
 
     pub fn _random_key() -> [u8; 16] {
         let mut key = [0u8; 16];
-        rand::thread_rng().fill(&mut key);
+        rand::rng().fill(&mut key);
         key
     }
 

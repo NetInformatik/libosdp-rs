@@ -116,7 +116,7 @@ fn main() -> Result<()> {
         .warnings(true)
         .include(&out_dir);
 
-    if std::env::var("WIN_WERROR").is_err() && Os::target().unwrap() != Os::Windows {
+    if std::env::var("WIN_WERROR").is_err() && Os::target() != Os::Windows {
         // TODO: Windows builds warn about various things which are legitimate
         // in other platforms. Over time, we need to assess each case and
         // handle it the way Windows likes us to do them and then remove this.

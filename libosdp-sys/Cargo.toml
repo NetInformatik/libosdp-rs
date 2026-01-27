@@ -13,10 +13,10 @@ keywords = ["osdp", "libosdp", "acs", "sia", "wiegand"]
 categories = ["development-tools", "embedded"]
 
 [build-dependencies]
-anyhow = "1.0.75"
-bindgen = "0.70.0"
-build-target = "0.4.0"
-cc = "1.0.83"
+anyhow = "1.0.100"
+bindgen = "0.72.1"
+build-target = "0.8.0"
+cc = "1.2.54"
 
 [features]
 packet_trace = []

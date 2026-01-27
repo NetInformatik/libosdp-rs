@@ -13,26 +13,26 @@ keywords = ["osdp", "libosdp", "acs", "sia", "wiegand"]
 categories = ["development-tools", "embedded"]
 
 [dependencies]
-bitflags = "2.4.0"
-embedded-io = { version = "0.6.1", features = ["alloc"] }
+bitflags = "2.10.0"
+embedded-io = { version = "0.7.1", features = ["alloc"] }
 libosdp-sys = "3.1.0"
-log = { version = "0.4.20", optional = true }
-serde = { version = "1.0.192", features = ["derive", "alloc"], default-features = false }
+log = { version = "0.4.29", optional = true }
+serde = { version = "1.0.228", features = ["derive", "alloc"], default-features = false }
 serde_arrays = "0.2.0"
-thiserror = { version = "1.0.50", optional = true }
-defmt = { version = "0.3", optional = true, features = ["alloc"] }
-itoa = "1.0.11"
+thiserror = { version = "2.0.18", optional = true }
+defmt = { version = "1.0", optional = true, features = ["alloc"] }
+itoa = "1.0.17"
 
 [dev-dependencies]
-env_logger = "0.11.3"
+env_logger = "0.11.8"
 multiqueue = "0.3.2"
-rand = "0.8.5"
-ringbuf = "0.3.3"
-sha256 = "1.5.0"
+rand = "0.9.2"
+ringbuf = "0.4.8"
+sha256 = "1.6.0"
 
 [features]
 default = ["std"]
-defmt-03 = ["embedded-io/defmt-03", "dep:defmt"]
+defmt = ["embedded-io/defmt", "dep:defmt"]
 log = ["dep:log"]
 std = ["thiserror", "serde/std", "log", "log/std"]
 

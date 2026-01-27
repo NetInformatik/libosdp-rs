@@ -111,7 +111,7 @@ where
     let f = File::create(path).unwrap();
     let mut writer = BufWriter::new(f);
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     while remaining_size > 0 {
         let to_write = cmp::min(remaining_size, buffer.len());
