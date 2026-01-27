@@ -9,7 +9,7 @@
 //! module is responsible to handling such events though [`OsdpEvent`].
 
 use crate::OsdpError;
-use alloc::vec::Vec;
+use alloc::{vec::Vec, format};
 use serde::{Deserialize, Serialize};
 
 use super::ConvertEndian;
@@ -32,16 +32,18 @@ pub enum OsdpCardFormats {
     Wiegand,
 }
 
-impl From<libosdp_sys::osdp_event_cardread_format_e> for OsdpCardFormats {
-    fn from(value: libosdp_sys::osdp_event_cardread_format_e) -> Self {
+impl TryFrom<libosdp_sys::osdp_event_cardread_format_e> for OsdpCardFormats {
+    type Error = OsdpError;
+
+    fn try_from(value: libosdp_sys::osdp_event_cardread_format_e) -> Result<Self> {
         match value {
             libosdp_sys::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_UNSPECIFIED => {
-                OsdpCardFormats::Unspecified
+                Ok(OsdpCardFormats::Unspecified)
             }
             libosdp_sys::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND => {
-                OsdpCardFormats::Wiegand
+                Ok(OsdpCardFormats::Wiegand)
             }
-            _ => panic!("Unknown osdp card format"),
+            cf => Err(OsdpError::Parse(format!("Unknown card format ({cf})").into())),
         }
     }
 }
@@ -117,20 +119,21 @@ impl OsdpEventCardRead {
     }
 }
 
-impl From<libosdp_sys::osdp_event_cardread> for OsdpEventCardRead {
-    fn from(value: libosdp_sys::osdp_event_cardread) -> Self {
-        let direction = value.direction == 1;
-        let format = value.format.into();
+impl TryFrom<libosdp_sys::osdp_event_cardread> for OsdpEventCardRead {
+    type Error = OsdpError;
+
+    fn try_from(value: libosdp_sys::osdp_event_cardread) -> Result<Self> {
+        let format = value.format.try_into()?;
         let len = value.length as usize;
         let (nr_bits, nr_bytes) = (len, len.div_ceil(8));
-        let data = value.data[0..nr_bytes].to_vec();
-        OsdpEventCardRead {
+
+        Ok(OsdpEventCardRead {
             reader_no: value.reader_no,
             format,
-            direction,
+            direction: value.direction == 1,
             nr_bits,
-            data,
-        }
+            data: value.data[0..nr_bytes].to_vec(),
+        })
     }
 }
 
@@ -245,22 +248,24 @@ pub enum OsdpStatusReportType {
     Local,
 }
 
-impl From<libosdp_sys::osdp_status_report_type> for OsdpStatusReportType {
-    fn from(value: libosdp_sys::osdp_status_report_type) -> Self {
+impl TryFrom<libosdp_sys::osdp_status_report_type> for OsdpStatusReportType {
+    type Error = OsdpError;
+
+    fn try_from(value: libosdp_sys::osdp_status_report_type) -> Result<Self> {
         match value {
             libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_INPUT => {
-                OsdpStatusReportType::Input
+                Ok(OsdpStatusReportType::Input)
             }
             libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_OUTPUT => {
-                OsdpStatusReportType::Output
+                Ok(OsdpStatusReportType::Output)
             }
             libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_REMOTE => {
-                OsdpStatusReportType::Remote
+                Ok(OsdpStatusReportType::Remote)
             }
             libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_LOCAL => {
-                OsdpStatusReportType::Local
+                Ok(OsdpStatusReportType::Local)
             }
-            _ => panic!("Invalid enum entry"),
+            rt => Err(OsdpError::Parse(format!("Unknown report type ({rt})").into())),
         }
     }
 }
@@ -304,13 +309,15 @@ pub struct OsdpStatusReport {
     pub report: [u8; 64],
 }
 
-impl From<libosdp_sys::osdp_status_report> for OsdpStatusReport {
-    fn from(value: libosdp_sys::osdp_status_report) -> Self {
-        OsdpStatusReport {
-            type_: value.type_.into(),
+impl TryFrom<libosdp_sys::osdp_status_report> for OsdpStatusReport {
+    type Error = OsdpError;
+
+    fn try_from(value: libosdp_sys::osdp_status_report) -> Result<Self> {
+        Ok(OsdpStatusReport {
+            type_: value.type_.try_into()?,
             nr_entries: value.nr_entries as usize,
             report: value.report,
-        }
+        })
     }
 }
 
@@ -377,22 +384,26 @@ impl From<OsdpEvent> for libosdp_sys::osdp_event {
     }
 }
 
-impl From<libosdp_sys::osdp_event> for OsdpEvent {
-    fn from(value: libosdp_sys::osdp_event) -> Self {
+impl TryFrom<libosdp_sys::osdp_event> for OsdpEvent {
+    type Error = OsdpError;
+
+    fn try_from(value: libosdp_sys::osdp_event) -> Result<Self> {
         match value.type_ {
             libosdp_sys::osdp_event_type_OSDP_EVENT_CARDREAD => {
-                OsdpEvent::CardRead(unsafe { value.__bindgen_anon_1.cardread.into() })
+                let data = unsafe { value.__bindgen_anon_1.cardread.try_into() }?;
+                Ok(OsdpEvent::CardRead(data))
             }
             libosdp_sys::osdp_event_type_OSDP_EVENT_KEYPRESS => {
-                OsdpEvent::KeyPress(unsafe { value.__bindgen_anon_1.keypress.into() })
+                Ok(OsdpEvent::KeyPress(unsafe { value.__bindgen_anon_1.keypress.into() }))
             }
             libosdp_sys::osdp_event_type_OSDP_EVENT_MFGREP => {
-                OsdpEvent::MfgReply(unsafe { value.__bindgen_anon_1.mfgrep.into() })
+                Ok(OsdpEvent::MfgReply(unsafe { value.__bindgen_anon_1.mfgrep.into() }))
             }
             libosdp_sys::osdp_event_type_OSDP_EVENT_STATUS => {
-                OsdpEvent::Status(unsafe { value.__bindgen_anon_1.status.into() })
+                let data = unsafe { value.__bindgen_anon_1.status.try_into() }?;
+                Ok(OsdpEvent::Status(data))
             }
-            _ => panic!("Unknown event"),
+            et => Err(OsdpError::Parse(format!("Unknown event ({et})").into())),
         }
     }
 }
@@ -419,7 +430,7 @@ mod tests {
         assert_eq!(event_struct.data[0], 0x55);
         assert_eq!(event_struct.data[1], 0xAA);
 
-        assert_eq!(event, event_struct.into());
+        assert_eq!(event, event_struct.try_into().unwrap());
 
         let event = OsdpEventCardRead::new_wiegand(15, vec![0x55, 0xAA]).unwrap();
         let event_struct: osdp_event_cardread = event.clone().into();
@@ -433,6 +444,6 @@ mod tests {
         assert_eq!(event_struct.data[0], 0x55);
         assert_eq!(event_struct.data[1], 0xAA);
 
-        assert_eq!(event, event_struct.into());
+        assert_eq!(event, event_struct.try_into().unwrap());
     }
 }

@@ -7,11 +7,14 @@
 //! are specified by OSDP specification. This module is responsible to handling
 //! such commands though [`OsdpCommand`].
 
+use crate::OsdpError;
 use crate::OsdpStatusReport;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 use super::ConvertEndian;
+
+type Result<T> = core::result::Result<T, OsdpError>;
 
 /// LED Colors as specified in OSDP for the on_color/off_color parameters.
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -37,6 +40,9 @@ pub enum OsdpLedColor {
 
     /// Cyan Color
     Cyan,
+
+    /// Unknown/Unsupported Color
+    Unknown(u8),
 }
 
 impl From<u8> for OsdpLedColor {
@@ -49,7 +55,7 @@ impl From<u8> for OsdpLedColor {
             libosdp_sys::osdp_led_color_e_OSDP_LED_COLOR_BLUE => OsdpLedColor::Blue,
             libosdp_sys::osdp_led_color_e_OSDP_LED_COLOR_MAGENTA => OsdpLedColor::Magenta,
             libosdp_sys::osdp_led_color_e_OSDP_LED_COLOR_CYAN => OsdpLedColor::Cyan,
-            _ => panic!("Invalid LED color code"),
+            cc => OsdpLedColor::Unknown(cc),
         }
     }
 }
@@ -64,6 +70,7 @@ impl From<OsdpLedColor> for u8 {
             OsdpLedColor::Blue => libosdp_sys::osdp_led_color_e_OSDP_LED_COLOR_BLUE as u8,
             OsdpLedColor::Magenta => libosdp_sys::osdp_led_color_e_OSDP_LED_COLOR_MAGENTA as u8,
             OsdpLedColor::Cyan => libosdp_sys::osdp_led_color_e_OSDP_LED_COLOR_CYAN as u8,
+            OsdpLedColor::Unknown(cc) => cc,
         }
     }
 }
@@ -583,40 +590,43 @@ impl From<OsdpCommand> for libosdp_sys::osdp_cmd {
     }
 }
 
-impl From<libosdp_sys::osdp_cmd> for OsdpCommand {
-    fn from(value: libosdp_sys::osdp_cmd) -> Self {
+impl TryFrom<libosdp_sys::osdp_cmd> for OsdpCommand {
+    type Error = OsdpError;
+
+    fn try_from(value: libosdp_sys::osdp_cmd) -> Result<Self> {
         match value.id {
             libosdp_sys::osdp_cmd_e_OSDP_CMD_LED => {
-                OsdpCommand::Led(unsafe { value.__bindgen_anon_1.led.into() })
+                Ok(OsdpCommand::Led(unsafe { value.__bindgen_anon_1.led.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_BUZZER => {
-                OsdpCommand::Buzzer(unsafe { value.__bindgen_anon_1.buzzer.into() })
+                Ok(OsdpCommand::Buzzer(unsafe { value.__bindgen_anon_1.buzzer.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_TEXT => {
-                OsdpCommand::Text(unsafe { value.__bindgen_anon_1.text.into() })
+                Ok(OsdpCommand::Text(unsafe { value.__bindgen_anon_1.text.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_OUTPUT => {
-                OsdpCommand::Output(unsafe { value.__bindgen_anon_1.output.into() })
+                Ok(OsdpCommand::Output(unsafe { value.__bindgen_anon_1.output.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_COMSET => {
-                OsdpCommand::ComSet(unsafe { value.__bindgen_anon_1.comset.into() })
+                Ok(OsdpCommand::ComSet(unsafe { value.__bindgen_anon_1.comset.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_COMSET_DONE => {
-                OsdpCommand::ComSetDone(unsafe { value.__bindgen_anon_1.comset.into() })
+                Ok(OsdpCommand::ComSetDone(unsafe { value.__bindgen_anon_1.comset.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_KEYSET => {
-                OsdpCommand::KeySet(unsafe { value.__bindgen_anon_1.keyset.into() })
+                Ok(OsdpCommand::KeySet(unsafe { value.__bindgen_anon_1.keyset.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_MFG => {
-                OsdpCommand::Mfg(unsafe { value.__bindgen_anon_1.mfg.into() })
+                Ok(OsdpCommand::Mfg(unsafe { value.__bindgen_anon_1.mfg.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_FILE_TX => {
-                OsdpCommand::FileTx(unsafe { value.__bindgen_anon_1.file_tx.into() })
+                Ok(OsdpCommand::FileTx(unsafe { value.__bindgen_anon_1.file_tx.into() }))
             }
             libosdp_sys::osdp_cmd_e_OSDP_CMD_STATUS => {
-                OsdpCommand::Status(unsafe { value.__bindgen_anon_1.status.into() })
+                let data = unsafe { value.__bindgen_anon_1.status.try_into() }?;
+                Ok(OsdpCommand::Status(data))
             }
-            _ => panic!("Unknown event"),
+            _ => Err(OsdpError::Parse("Unknown event".into())),
         }
     }
 }

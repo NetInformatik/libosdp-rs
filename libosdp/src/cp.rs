@@ -47,9 +47,13 @@ extern "C" fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut libosdp_sys:
 where
     F: FnMut(i32, OsdpEvent) -> i32,
 {
-    let event: OsdpEvent = unsafe { (*event).into() };
-    let callback: &mut F = unsafe { &mut *(data as *mut F) };
-    callback(pd, event)
+    match unsafe { (*event).try_into() } {
+        Ok(event) => {
+            let callback: &mut F = unsafe { &mut *(data as *mut F) };
+            callback(pd, event)
+        },
+        Err(_) => -1,  // Failed to parse the event data -> Send NAK
+    }
 }
 
 type EventCallback =
@@ -178,7 +182,7 @@ impl ControlPanel {
         if rc < 0 {
             Err(OsdpError::Query("capability"))
         } else {
-            Ok(cap.into())
+            Ok(cap.try_into()?)
         }
     }
 
