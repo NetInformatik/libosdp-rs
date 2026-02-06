@@ -208,7 +208,12 @@ fn main() -> Result<()> {
 
     /* generate bindings */
 
+    let host = env::var("HOST").unwrap_or_default();
     let mut args = vec![format!("-I{}", &out_dir)];
+    if host == target {
+        // Ensure bindgen uses the same target as rustc on host builds.
+        args.push(format!("--target={}", target));
+    }
     if short_enums {
         args.push("-fshort-enums".to_owned());
     } else {
