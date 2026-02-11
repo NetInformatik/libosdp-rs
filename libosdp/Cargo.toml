@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "libosdp"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Siddharth Chandrasekaran <sidcha.dev@gmail.com>"]
 description = "Library implementation of IEC 60839-11-5 OSDP (Open Supervised Device Protocol)"
 documentation = "https://docs.rs/libosdp"
@@ -16,7 +16,7 @@ publish = ["kellnr"] # WARNING: The publish registry here is for NetInformatik's
 [dependencies]
 bitflags = "2.4.0"
 embedded-io = { version = "0.6.1", features = ["alloc"] }
-libosdp-sys = { version = "3.1.0", registry = "kellnr" }
+libosdp-sys = { version = "3.1.1", registry = "kellnr" }
 log = { version = "0.4.20", optional = true }
 serde = { version = "1.0.192", features = ["derive", "alloc"], default-features = false }
 serde_arrays = "0.2.0"
